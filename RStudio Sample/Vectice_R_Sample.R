@@ -13,7 +13,7 @@ pty_id_raw <- read.csv("RStudio Sample/PTY_ID_MAIN.csv", header=TRUE)
 
 # Basic Data Prep
 
-#Remove CA customers from analysis
+#Remove extra header rows and CA customers from analysis
 pty_id_rmhead <- subset(pty_id_raw,Customer_State_Address != 'Customer_State_Address')
 pty_id_noCA <- subset(pty_id_rmhead,Customer_State_Address != 'CA')
 
@@ -57,7 +57,7 @@ vct <- vectice$connect(api_token = 'ynqdogKBN.6mDRJXaMkGjrobPx0LwvEynqdogKBNl69e
 phase <- vct$phase("PHA-1280")$create_iteration()
 pdDF <- reticulate::r_to_py(pty_id_raw)
 ds_resource <- vectice$FileResource(paths="RStudio Sample/PTY_ID_MAIN.csv", dataframes = pdDF)
-raw_ds <- vectice$Dataset$origin(name="RStudio Sample/PTY_ID_MAIN", resource=ds_resource)
+raw_ds <- vectice$Dataset$origin(name="PTY_ID_MAIN", resource=ds_resource)
 phase$step_identify_data <- raw_ds
 phase$step_describe <- "PTY_ID_MAIN is the source data for this project"
 phase$complete()
