@@ -1,10 +1,10 @@
-vectice_environment <- "base"
-reticulate::use_condaenv(condaenv = vectice_environment, required = TRUE)
-message(sprintf("using %s environment", vectice_environment))
-reticulate::py_config()
-reticulate::py_install("vectice", pip = TRUE)
-reticulate::py_module_available("vectice")
-reticulate::py_module_available("pandas")
+#vectice_environment <- "base"
+#reticulate::use_condaenv(condaenv = vectice_environment, required = TRUE)
+#message(sprintf("using %s environment", vectice_environment))
+#reticulate::py_config()
+#reticulate::py_install("vectice", pip = TRUE)
+#reticulate::py_module_available("vectice")
+#reticulate::py_module_available("pandas")
 
 library(tidyverse)
 
@@ -60,6 +60,7 @@ ds_resource <- vectice$FileResource(paths="RStudio Sample/PTY_ID_MAIN.csv", data
 raw_ds <- vectice$Dataset$origin(name="RStudio Sample/PTY_ID_MAIN", resource=ds_resource)
 phase$step_identify_data <- raw_ds
 phase$step_describe <- "PTY_ID_MAIN is the source data for this project"
+phase$complete()
 
 #Catalog the cleaned data
 #Start a new iteration
@@ -68,3 +69,5 @@ pdDF <- reticulate::r_to_py(pty_id_clean)
 ds_resource <- vectice$FileResource(paths="RStudio Sample/PTY_ID_CLEAN.csv", dataframes = pdDF)
 clean_ds <- vectice$Dataset$clean(name="PTY_ID_CLEAN", resource=ds_resource, attachments = "RStudio Sample/pty_id_states.jpg")
 phase$step_clean_data <- clean_ds
+phase$complete()
+
