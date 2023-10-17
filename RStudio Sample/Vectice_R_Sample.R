@@ -33,6 +33,7 @@ df_stroke_clean$bmi<-as.numeric(df_stroke_clean$bmi)
 
 write.csv(df_stroke_clean, "healthcare-dataset-stroke-data-clean.csv", row.names=FALSE)
 
+
 #Lets split the final dataset to training and test data
 n_obs <- nrow(df_stroke_clean)
 split <- round(n_obs * 0.7)
