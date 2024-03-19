@@ -18,7 +18,7 @@ def main(argv):
     
     dataset_id = None
     if "dataset_id" in config_data:
-        dataset_id =   config_data["dataset_id"]
+        dataset_id = config_data["dataset_id"]
         
     model_id = None
     if "model_id" in config_data:
@@ -44,10 +44,7 @@ def main(argv):
         model, metric, figs = modeling(train_no_missing, train_labels, test_no_missing, test_target)
         model_widget = log_model("Probability of Default", model, metric,"Random Forest", figs, modeling_widget.latest_version_id )
         vct_iter.log(model_widget)
-        vct_iter.complete()
-    
-    
-        
+        vct_iter.complete()        
         
         
 
