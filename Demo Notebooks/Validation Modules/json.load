@@ -1,0 +1,6 @@
+{
+    "data_path":"/Users/ebarre/Documents/Vectice Git/Customer-Success/Demo Notebooks/Validation Modules/application_train.csv",
+    "target":"TARGET",
+    "phase_id":"PHA-4409",
+    "api_token":""
+}
