@@ -11,9 +11,13 @@ def main(argv):
     config_path = argv[1]
     config_data = json.load(open(config_path))
     
+    global vct_conn
+    global vct_iter
+    
     data_path = config_data["data_path"]
     data_target = config_data["target"]
-    phase = config_data["phase_id"]
+    modeling_phase = config_data["modeling_phase_id"]
+    dp_phase = config_data["dp_phase_id"]
     api_token = config_data["api_token"]
     
     dataset_id = None
@@ -26,25 +30,32 @@ def main(argv):
         
     
     vct_conn = vectice.connect(api_token=api_token)
-    vct_iter = vct_conn.phase(phase).create_or_get_current_iteration()
+    
     
     if model_id is not None:
         updateVersion(vct_conn, model_id)
     else:
+        # Create iteration + log assets on the EDA phase
+        vct_iter = vct_conn.browse(dp_phase).create_or_get_current_iteration()
+        # Catalog source dataset
+        src_widget = log_src_ds(pd.read_csv(data_path), data_path)
+        vct_iter.log(src_widget)
         clean, test, train, test_target = data_split(data_path)
         trgt_dist = data_xploration(clean, data_target)
-        clean_widget = log_clean_ds(clean, data_path, trgt_dist)
+        clean_widget = log_clean_ds(clean, src_widget, trgt_dist)
         vct_iter.log(clean_widget)
+        vct_iter.complete()
         
         train_no_missing, train_labels, test_no_missing  = data_encoding(train, test)
         
+        vct_iter = vct_conn.browse(modeling_phase).create_or_get_current_iteration()
         modeling_widget = log_modeling_ds(clean,train_no_missing, test_no_missing, data_path, clean_widget.latest_version_id)
         vct_iter.log(modeling_widget)
         
         model, metric, figs = modeling(train_no_missing, train_labels, test_no_missing, test_target)
         model_widget = log_model("Probability of Default", model, metric,"Random Forest", figs, modeling_widget.latest_version_id )
         vct_iter.log(model_widget)
-        vct_iter.complete()        
+        vct_iter.complete()    
         
         
 
@@ -55,10 +66,15 @@ def log_modeling_ds(clean, train, test, data_path, derived):
                             derived_from=derived)
     return modeling_ds
     
-def log_clean_ds(clean, data_path, att):
-    from vectice import Dataset, FileResource
-    data_clean = Dataset.clean(name = "Clean Dataset", resource = FileResource(paths=data_path, dataframes=clean), attachments=att)
+def log_clean_ds(clean, data_src, att):
+    from vectice import Dataset, FileResource, NoResource
+    data_clean = Dataset.clean(name = "Clean Dataset", resource = NoResource(dataframes=clean, origin=""),derived_from=data_src, attachments=att)
     return data_clean
+
+def log_src_ds(src, data_path):
+    from vectice import Dataset, FileResource
+    data_src = Dataset.origin(name = "Origin Dataset", resource = FileResource(paths=data_path, dataframes=src))
+    return data_src
     
 def log_model(name, model, metric, technique, figs, derived):
     from vectice import Model
@@ -89,6 +105,13 @@ def data_split(data_path):
     #print('Training data shape: ', app_train_feat.shape)
     #print('Testing shape: ', app_test_feat.shape)
     #print('Testing target shape: ', app_test_feat_target.shape)
+    
+    vct_iter.log(vectice.Table(pd.DataFrame(app_train_feat.shape),name="Training data shape"))
+    vct_iter.log(vectice.Table(pd.DataFrame(app_test_feat.shape),name="Testing shape"))
+    vct_iter.log(vectice.Table(pd.DataFrame(app_test_feat_target.shape),name="Testing Target shape"))
+    
+    
+    
     return application_cleaned, app_test_feat, app_train_feat, app_test_feat_target
     
 def data_xploration(df, target):
@@ -114,12 +137,10 @@ def data_encoding(train, test):
                 le.fit(train[col])
                 # Transform both training and testing data
                 train[col] = le.transform(train[col])
-                #train[col] = le.transform(train[col])
                 
                 # Keep track of how many columns were label encoded
                 le_count += 1
                 
-    #return '%d columns were label encoded.' % le_count
     # one-hot encoding of categorical variables
     train = pd.get_dummies(train)
     test = pd.get_dummies(test)
