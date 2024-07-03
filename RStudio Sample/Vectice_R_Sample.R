@@ -13,7 +13,7 @@ library(dplyr)
 library(randomForest)
 library(gridExtra)
 
-df_stroke_raw<-read.csv("healthcare-dataset-stroke-data.csv", header = TRUE)
+df_stroke_raw<-read.csv("~/Documents/Vectice Git/Customer-Success/RStudio Sample/healthcare-dataset-stroke-data.csv", header = TRUE)
 
 # Drop the column with 'other'.(Since there is only 1 row)
 df_stroke_clean = df_stroke_raw[!df_stroke_raw$gender == 'Other',]
@@ -31,7 +31,7 @@ df_stroke_clean$Residence_type<-as.factor(df_stroke_clean$Residence_type)
 df_stroke_clean$smoking_status<-as.factor(df_stroke_clean$smoking_status)
 df_stroke_clean$bmi<-as.numeric(df_stroke_clean$bmi)
 
-write.csv(df_stroke_clean, "healthcare-dataset-stroke-data-clean.csv", row.names=FALSE)
+write.csv(df_stroke_clean, "~/Documents/Vectice Git/Customer-Success/RStudio Sample/healthcare-dataset-stroke-data-clean.csv", row.names=FALSE)
 
 
 #Lets split the final dataset to training and test data
@@ -56,11 +56,11 @@ cm <- confusionMatrix(predict(rf_model, test), test$stroke)
 
 vectice <- reticulate::import("vectice")
 # Connect to Vectice
-vct <- vectice$connect(api_token = 'ng1Wom1Xp.jObvAoJxPNw9EQydYeRaWng1Wom1XpVGj7BDk286zml34ML0Zr')
+vct <- vectice$connect(api_token = 'BxKyOk5GZ.9Qrm8P6LanyeEWpNvgoVlBxKyOk5GZzj30dkMRX279JOb4YDAw')
 
 #Catalog the raw data
 iter <- vct$phase("PHA-1301")$create_or_get_current_iteration()
-ds_resource <- vectice$FileResource(paths="healthcare-dataset-stroke-data.csv", dataframes = df_stroke_raw)
+ds_resource <- vectice$FileResource(paths="~/Documents/Vectice Git/Customer-Success/RStudio Sample/healthcare-dataset-stroke-data.csv")
 raw_ds <- vectice$Dataset$origin(name="Stroke_Dataset", resource=ds_resource)
 iter$log(raw_ds, section= "Identify Dataset")
 iter$log("healthcare-dataset-stroke-data.csv is the source data for this project", section= "Identify Dataset")
@@ -74,16 +74,19 @@ iter$log(clean_ds, section="EDA")
 iter$log("The data was prepared according to our standard data pipeline for:\n\tcompletness\n\tnormalization\n\tsecurity\n\tbias free\n\tanonymized\nAs required by Compliance", section="EDA")
 iter$complete()
 
-#Catalog the modeling dataset
+#Add a comment
 iter <- vct$phase("PHA-1300")$create_or_get_current_iteration()
+iter$log("Based on the type of analysis, the amount of data accessible for training (<100k) and feature importance, we have opted to use a Linear Regression for this iteration to get a base model.", section="Modeling Techniques")
+
+#Catalog the modeling dataset
 ds_train <- vectice$FileResource(paths="train.csv", dataframes = train)
 ds_test <- vectice$FileResource(paths="test.csv", dataframes = test)
 modeling_ds <- vectice$Dataset$modeling(name="Modeling_Dataset", training_resource=ds_train, testing_resource=ds_test, derived_from = clean_ds$latest_version_id)
-iter$log(modeling_ds, section = "Modeling Dataset")
+iter$log(modeling_ds, section="Modeling Dataset")
 
 #Catalog the model itself
 stats <- list("Accuracy" = cm$overall[1], "McnemarPValue" = cm$overall[7])
 model <- vectice$Model(name = "Predictor model", library = "scikit-learn", technique = "randomForest", metrics = stats, derived_from  = modeling_ds$latest_version_id)
 iter$log(model, section="Build Model")
 iter$log("ROC_Curve.png", section = "Build Model")
-iter$complete()
+#iter$complete()

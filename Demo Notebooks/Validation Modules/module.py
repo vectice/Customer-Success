@@ -59,7 +59,7 @@ def main(argv):
         
         
 
-def log_modeling_ds(clean, train, test, data_path, derived):
+def log_modeling_ds(train, test, derived):
     from vectice import Dataset, NoResource
     modeling_ds = Dataset.modeling(name = "Modeling",training_resource = NoResource(dataframes=train, origin=""), 
                             testing_resource=NoResource(dataframes=test, origin=""),
@@ -67,7 +67,7 @@ def log_modeling_ds(clean, train, test, data_path, derived):
     return modeling_ds
     
 def log_clean_ds(clean, data_src, att):
-    from vectice import Dataset, FileResource, NoResource
+    from vectice import Dataset, NoResource
     data_clean = Dataset.clean(name = "Clean Dataset", resource = NoResource(dataframes=clean, origin=""),derived_from=data_src, attachments=att)
     return data_clean
 
